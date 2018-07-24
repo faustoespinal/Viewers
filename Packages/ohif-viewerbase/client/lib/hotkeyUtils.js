@@ -48,6 +48,8 @@ Meteor.startup(function() {
         resetViewport: '',
         clearTools: '',
 
+        phcProcess: '',
+
         // Viewport navigation hotkeys
         scrollDown: 'DOWN',
         scrollUp: 'UP',
@@ -142,6 +144,7 @@ Meteor.startup(function() {
         rotateR: 'Rotate Right',
         rotateL: 'Rotate Left',
         resetViewport: 'Reset',
+        phcProcess: 'PHC Process',
         clearTools: 'Clear Tools'
     });
 

@@ -8,6 +8,7 @@ import { cornerstone, cornerstoneTools } from 'meteor/ohif:cornerstone';
 import { updateOrientationMarkers } from './updateOrientationMarkers';
 import { getInstanceClassDefaultViewport } from './instanceClassSpecificViewport';
 
+
 /**
  * Get a cornerstone enabledElement for a DOM Element
  * @param  {DOMElement} element Element to get the enabledElement from Cornerstone
@@ -217,6 +218,137 @@ const toggleCinePlay = () => {
     Session.set('UpdateCINE', Math.random());
 };
 
+const getImageAttributes = (element) => {
+    // Get the Cornerstone imageId
+    const enabledElement = cornerstone.getEnabledElement(element);
+    const imageId = enabledElement.image.imageId;
+
+    // Get studyInstanceUid & patientId
+    const study = cornerstone.metaData.get('study', imageId);
+    const studyInstanceUid = study.studyInstanceUid;
+    const patientId = study.patientId;
+
+    // Get seriesInstanceUid
+    const series = cornerstone.metaData.get('series', imageId);
+    const seriesInstanceUid = series.seriesInstanceUid;
+
+    // Get sopInstanceUid
+    const sopInstance = cornerstone.metaData.get('instance', imageId);
+    const sopInstanceUid = sopInstance.sopInstanceUid;
+    const frameIndex = sopInstance.frame || 0;
+
+    // Get patientInfo
+    const patient = cornerstone.metaData.get('patient', imageId);
+    
+    console.log("METADATA OBJECT:",cornerstone.metaData)
+
+    const imagePath = [studyInstanceUid, seriesInstanceUid, sopInstanceUid, frameIndex].join('_');
+
+    return {
+        patientId,
+        studyInstanceUid,
+        seriesInstanceUid,
+        sopInstanceUid,
+        frameIndex,
+        imagePath,
+        patient
+    };
+};
+
+// Activate PHC workflow
+const phcProcess = () => {
+    // Get the active viewport element
+    const element = getActiveViewportElement();
+
+    const imageAttributes = getImageAttributes(element);
+
+    // // Check if it's playing the clip to toggle it
+    // if (isPlaying()) {
+    //     cornerstoneTools.stopClip(element);
+    // } else {
+    //     cornerstoneTools.playClip(element);
+    // }
+    console.log("##########################")
+    console.log("******* PHC Process it!!!!")
+    console.log("##########################")
+
+    console.log("OHIF:",OHIF);
+    console.log("IRA:",imageAttributes);
+
+    var getUrl = window.location;
+    var baseUrl = getUrl.protocol + "//" + getUrl.hostname;
+    var qidoUrl = baseUrl+":30043/eis/v1/store/EIS.DCM/studies/"+imageAttributes.studyInstanceUid+"/series";
+
+    $.get(qidoUrl,function(seriesInfoStr) {
+        var seriesInfo = JSON.parse(seriesInfoStr);
+        console.log("****** Series under study:",seriesInfo.length);
+        var seriesIds = [];
+        var series1Uid = imageAttributes.seriesInstanceUid;
+        var series2Uid = imageAttributes.seriesInstanceUid;
+
+        var numSeries = 0;
+        if (seriesInfo && seriesInfo.length) {
+            for(i=0;i<seriesInfo.length;i++) {
+                var seriesObj = seriesInfo[i];
+                console.log(i,seriesObj);
+                console.log(Object.keys(seriesObj));
+                var seriesDescObj = seriesObj["0008103e"];
+                if (seriesDescObj && seriesDescObj.Value) {
+                    seriesDesc = seriesDescObj.Value[0];
+                    if (!seriesDesc.includes("OVERLAY")) {
+                        var seriesUID = seriesObj["0020000e"].Value[0];
+                        seriesUID = seriesUID.trim();
+                        if (seriesUID!="") {
+                            seriesIds.push(seriesUID);
+                        }
+                    }
+                }
+            }
+        }
+        console.log("*** Found",seriesIds.length,"series in Study (",seriesIds,")");
+        if (seriesIds.length>1) {
+            series1Uid = seriesIds[0]
+            series2Uid = seriesIds[1]
+        }
+
+        var conductor_url = baseUrl+":31169/api/workflow/phc_workflowuid_http";
+
+        // xhr.open("POST", conductor_url, true);
+        // xhr.setRequestHeader("Content-type", "application/json");
+        var conductorCB = function (data,status) { 
+            console.log("CONDUCTOR_RESPONSE:",data,status);
+        };
+        var data = JSON.stringify({
+            "qidourl": "http://qidourl",
+            "wadourl": "http://dcmimport",
+            "inferenceurl": "http://inference",
+            "dicomexporturl": "http://dcmexport",
+            "studyUID": imageAttributes.studyInstanceUid,
+            "series1UID": series1Uid,
+            "series2UID": series2Uid,
+            "patientID": imageAttributes.patient.id,
+            "patientName": imageAttributes.patient.name,
+            "datapathBase": "/data",
+            "resultspathBase": "/data/results"
+         });
+        console.log("*** Posting workflow execution request to: URL=",conductor_url,"DATA=",data);
+        $.ajax({
+            "type": "POST",
+            "url": conductor_url,
+            "data": data,
+            "success": conductorCB,
+            "contentType": "application/json",
+            "error": function(errObj, errMsg) {
+                console.log("**** ERROR posting to conductor: ",errObj,errMsg);
+            }
+        }); //conductor_url,data,conductorCB);
+    });
+    //xhr.send(data);
+
+    // Update the UpdateCINE session property
+    //Session.set('UpdateCINE', Math.random());
+};
+
 // Show/hide the CINE dialog
 const toggleCineDialog = () => {
     const dialog = document.getElementById('cineDialog');
@@ -386,6 +518,7 @@ const viewportUtils = {
     linkStackScroll,
     toggleDialog,
     toggleCinePlay,
+    phcProcess,
     toggleCineDialog,
     toggleDownloadDialog,
     isPlaying,
