@@ -6,6 +6,8 @@
 node_modules
 .npm
 npm-debug.log
+package-lock.json
 Packages/active-entry/helloworld/
 LesionTracker/tests/nightwatch/reports/
 docs/_book
+dist/
