@@ -10,11 +10,11 @@
 		  "servers": {
 		    "dicomWeb": [
 					{
-		        "name": "Orthanc",
-		        "wadoUriRoot": "http://pacsIP:8042/wado",
-		        "qidoRoot": "http://pacsIP:8042/dicom-web",
-		        "wadoRoot": "http://pacsIP:8042/dicom-web",
-		        "qidoSupportsIncludeField": false,
+						"name": "EISDB",
+						"wadoUriRoot": "http://dicom-web.ohif-viewer:8080/v1/dicom-web/wado-uri",
+						"qidoRoot": "http://dicom-web.ohif-viewer:8080/v1/dicom-web/qido",
+						"wadoRoot": "http://dicom-web.ohif-viewer:8080/v1/dicom-web/wado",
+						"qidoSupportsIncludeField": true,
 		        "imageRendering": "wadouri",
 		        "thumbnailRendering": "wadouri",
 		        "requestOptions": {
@@ -29,7 +29,7 @@
 		  "defaultServiceType": "dicomWeb",
 		  "public": {
 				"ui": {
-					"studyListDateFilterNumDays": 1
+					"studyListDateFilterNumDays": 10000
 				}
 			},
 		  "proxy": {
