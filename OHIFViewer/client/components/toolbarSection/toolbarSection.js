@@ -172,6 +172,13 @@ Template.toolbarSection.helpers({
         });
 
         buttonData.push({
+            id: 'phcProcess',
+            title: 'PHC Process',
+            classes: 'imageViewerCommand',
+            svgLink: '/packages/ohif_viewerbase/assets/icons.svg#icon-tools-phc-process'
+        });
+
+        buttonData.push({
             id: 'zoom',
             title: 'Zoom',
             classes: 'imageViewerTool',

@@ -60,6 +60,7 @@ Meteor.startup(() => {
     OHIF.viewer.functionList = {
         toggleCineDialog: viewportUtils.toggleCineDialog,
         toggleCinePlay: viewportUtils.toggleCinePlay,
+        phcProcess: viewportUtils.phcProcess,
         clearTools: viewportUtils.clearTools,
         resetViewport: viewportUtils.resetViewport,
         invert: viewportUtils.invert
