@@ -14,38 +14,30 @@ RUN apt-get update && apt-get install -y \
 # Create a non-root user
 RUN useradd -ms /bin/bash user
 USER user
-RUN mkdir /home/user/Viewers
-COPY OHIFViewer/package.json /home/user/Viewers/OHIFViewer/
-#ADD --chown=user:user . /home/user/Viewers
-ADD . /home/user/Viewers
-RUN chown user:user /home/user/Viewers
 
 COPY ./meteor_install.sh ./meteor_install.sh
 COPY ./ca-certificates.crt ./ca-certificates.crt
 ENV CAFILE=/ca-certificates.crt
 RUN cat ./meteor_install.sh | sh
 
-# This does not work in the GE firewall
-#RUN curl "https://install.meteor.com/?release=1.7.0.3" | sh
-#RUN curl https://install.meteor.com/ | sh
+RUN mkdir /home/user/Viewers
+COPY OHIFViewer/package.json /home/user/Viewers/OHIFViewer/
+ADD --chown=user:user . /home/user/Viewers
 
 RUN ls -ls /home/user/.meteor
+
+RUN mkdir /home/user/app
+
+# Permissions issue with meteor files when running the build.
+#USER root
+#RUN chown -R user:user /home/user/Viewers
+#USER user
 
 WORKDIR /home/user/Viewers/OHIFViewer
 
 ENV METEOR_PACKAGE_DIRS=../Packages
-#ENV METEOR_SETTINGS="$(cat ../config/edisonDICOMWeb.json)"
 ENV METEOR_PROFILE=1
-
-#RUN npm install
-RUN mkdir /home/user/app
-
-# Permissions issue with meteor files when running the build.
-USER root
-RUN chown -R user:user /home/user/Viewers/OHIFViewer/.meteor
-RUN chown -R user:user /home/user/Viewers/Packages
-USER user
-
+RUN /home/user/.meteor/meteor npm install
 RUN /home/user/.meteor/meteor build --directory /home/user/app
 WORKDIR /home/user/app/bundle/programs/server
 RUN npm install --production
